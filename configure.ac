@@ -617,6 +617,11 @@ PKG_CHECK_MODULES([LIBUSB1], [libusb-1.0], [
 
 PKG_CHECK_MODULES([LIBUSB0], [libusb], [use_libusb0=yes], [use_libusb0=no])
 
+PKG_CHECK_MODULES([yaml], [yaml-0.1], [AC_DEFINE([HAVE_YAML], [1], [Define if you have libyaml-0.1])
+				AC_MSG_NOTICE([yaml flags: "$yaml_CFLAGS"])], [HAVE_YAML=no])
+
+
+  
 for hidapi_lib in hidapi hidapi-hidraw hidapi-libusb; do
 	PKG_CHECK_MODULES([HIDAPI],[$hidapi_lib],[
 		use_hidapi=yes

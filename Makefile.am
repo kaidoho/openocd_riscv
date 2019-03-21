@@ -39,6 +39,8 @@ AM_CPPFLAGS = $(HOST_CPPFLAGS)\
 			  -DPKGDATADIR=\"$(pkgdatadir)\" \
 			  -DBINDIR=\"$(bindir)\"
 
+AM_CPPFLAGS += $(yaml_CFLAGS)
+
 if INTERNAL_JIMTCL
 AM_CPPFLAGS += -I$(top_srcdir)/jimtcl \
 			   -I$(top_builddir)/jimtcl
@@ -142,3 +144,4 @@ MAINTAINERCLEANFILES = \
 
 include src/Makefile.am
 include doc/Makefile.am
+
