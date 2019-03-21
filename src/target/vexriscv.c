@@ -15,12 +15,19 @@
 #include "vexriscv.h"
 
 #include <stdio.h>
+#include <string.h>
+#ifndef _WIN32
 #include <sys/socket.h>
 #include <netinet/in.h>
-#include <string.h>
 #include <arpa/inet.h>
 #include <fcntl.h>
+#include <sys/ioctl.h>
 #include <netinet/tcp.h>
+#else
+#include <winsock2.h>
+#include <windows.h>
+#endif
+
 #include <yaml.h>
 #include <errno.h>
 #include "algorithm.h"
