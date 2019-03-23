@@ -893,6 +893,7 @@ static int vexriscv_network_read(struct vexriscv_common *vexriscv, void *buffer,
 {
   int ret ;
 	if (vexriscv->networkProtocol == NP_IVERILOG)
+  {
 		ret = recv(vexriscv->clientSocket, &buffer, 4, 0);
     #ifdef _WIN32
     if (ret < 0 ) 
@@ -901,8 +902,9 @@ static int vexriscv_network_read(struct vexriscv_common *vexriscv, void *buffer,
     }
     #endif
     return ret;
-  
-	else if (vexriscv->networkProtocol == NP_ETHERBONE) {
+  }
+	else if (vexriscv->networkProtocol == NP_ETHERBONE) 
+  {
 		uint8_t wb_buffer[20];
 		uint32_t intermediate;
 		ret = recv(vexriscv->clientSocket, wb_buffer, sizeof(wb_buffer),0);
@@ -921,7 +923,8 @@ static int vexriscv_network_read(struct vexriscv_common *vexriscv, void *buffer,
 		memcpy(buffer, &intermediate, sizeof(intermediate));
 		return 4;
 	}
-	else {
+	else 
+  {
 		return 0;
 	}
 }
