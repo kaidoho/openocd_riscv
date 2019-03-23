@@ -40,8 +40,7 @@
 #define htobe64(x) htonll(x)
 #define htole64(x) (x)
 #define be64toh(x) ntohll(x)
-#define le64toh(x) (x)
-
+#define le64toh(x) (x)                   
 #endif
 
 #include <yaml.h>
@@ -81,7 +80,12 @@ struct vexriscv_common {
 	uint32_t largest_csr;
 	struct vexriscv_core_reg *arch_info;
 	uint32_t dbgBase;
+#ifndef _WIN32
 	int clientSocket;
+#else
+  socket clientSocket;
+  WSADATA wsaData;
+#endif
 	int useTCP;
 	uint32_t readWaitCycles;
 	char* cpuConfigFile;
@@ -204,7 +208,17 @@ static int vexriscv_target_create(struct target *target, Jim_Interp *interp)
 	target->arch_info = vexriscv;
 	vexriscv->dbgBase = target->dbgbase;
 	vexriscv->tap = target->tap;
+  #ifndef _WIN32
 	vexriscv->clientSocket = 0;
+  #else
+    vexriscv->clientSocket = INVALID_SOCKET;
+    int tmp = WSAStartup(MAKEWORD(2,2), &vexriscv->wsaData);
+    if (tmp != 0) 
+    {
+      printf("WSAStartup failed with error: %d\n", tmp);
+      return ERROR_FAIL;
+    }
+  #endif
 	vexriscv->readWaitCycles = 10;
 	vexriscv->networkProtocol = NP_IVERILOG;
 	vexriscv_create_reg_list(target);
@@ -877,12 +891,29 @@ static int vexriscv_deassert_reset(struct target *target)
 
 static int vexriscv_network_read(struct vexriscv_common *vexriscv, void *buffer, size_t count)
 {
+  int ret ;
 	if (vexriscv->networkProtocol == NP_IVERILOG)
-		return recv(vexriscv->clientSocket, &buffer, 4, 0);
+		ret = recv(vexriscv->clientSocket, &buffer, 4, 0);
+    #ifdef _WIN32
+    if (ret < 0 ) 
+    {
+      printf("recv failed with error: %d\n", WSAGetLastError());
+    }
+    #endif
+    return ret;
+  
 	else if (vexriscv->networkProtocol == NP_ETHERBONE) {
 		uint8_t wb_buffer[20];
 		uint32_t intermediate;
-		int ret = read(vexriscv->clientSocket, wb_buffer, sizeof(wb_buffer));
+		ret = recv(vexriscv->clientSocket, wb_buffer, sizeof(wb_buffer),0);
+    
+    #ifdef _WIN32
+    if (ret < 0 ) 
+    {
+      printf("recv failed with error: %d\n", WSAGetLastError());
+    }
+    #endif
+    
 		if (ret != sizeof(wb_buffer))
 			return 0;
 		memcpy(&intermediate, &wb_buffer[16], sizeof(intermediate));
@@ -897,6 +928,7 @@ static int vexriscv_network_read(struct vexriscv_common *vexriscv, void *buffer,
 
 static int vexriscv_network_write(struct vexriscv_common *vexriscv, int is_read, uint32_t size, uint32_t address, uint32_t data)
 {
+  int ret;
 	if (vexriscv->networkProtocol == NP_IVERILOG)
 	{
 		uint8_t buffer[10];
@@ -904,7 +936,16 @@ static int vexriscv_network_write(struct vexriscv_common *vexriscv, int is_read,
 		buffer[1] = size;
 		buf_set_u32(buffer + 2, 0, 32, address);
 		buf_set_u32(buffer + 6, 0, 32, data);
-		return send(vexriscv->clientSocket, buffer, 10, 0);
+		ret = send(vexriscv->clientSocket, buffer, 10, 0);
+    #ifdef _WIN32
+    if (ret == SOCKET_ERROR) 
+    {
+      printf("send failed with error: %d\n", WSAGetLastError());
+      closesocket(ConnectSocket);
+      WSACleanup();
+    }
+    #endif
+    return ret;
 	}
 	else if (vexriscv->networkProtocol == NP_ETHERBONE)
 	{
@@ -942,7 +983,18 @@ static int vexriscv_network_write(struct vexriscv_common *vexriscv, int is_read,
 			data = htobe32(data);
 			memcpy(&wb_buffer[16], &data, sizeof(data));
 		}
-		return write(vexriscv->clientSocket, wb_buffer, sizeof(wb_buffer));
+    
+    ret = send(vexriscv->clientSocket, wb_buffer, sizeof(wb_buffer),0);
+    
+    #ifdef _WIN32
+    if (ret == SOCKET_ERROR) 
+    {
+      printf("send failed with error: %d\n", WSAGetLastError());
+      closesocket(ConnectSocket);
+      WSACleanup();
+    }
+    #endif
+		return ret; 
 	}
 	else {
 		LOG_ERROR("Unrecognized network protocol");
