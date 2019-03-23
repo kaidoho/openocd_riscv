@@ -941,7 +941,7 @@ static int vexriscv_network_write(struct vexriscv_common *vexriscv, int is_read,
     if (ret == SOCKET_ERROR) 
     {
       printf("send failed with error: %d\n", WSAGetLastError());
-      closesocket(ConnectSocket);
+      closesocket(vexriscv->clientSocket);
       WSACleanup();
     }
     #endif
@@ -990,7 +990,7 @@ static int vexriscv_network_write(struct vexriscv_common *vexriscv, int is_read,
     if (ret == SOCKET_ERROR) 
     {
       printf("send failed with error: %d\n", WSAGetLastError());
-      closesocket(ConnectSocket);
+      closesocket(vexriscv->clientSocket);
       WSACleanup();
     }
     #endif
