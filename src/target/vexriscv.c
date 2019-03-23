@@ -83,7 +83,7 @@ struct vexriscv_common {
 #ifndef _WIN32
 	int clientSocket;
 #else
-  socket clientSocket;
+  SOCKET clientSocket;
   WSADATA wsaData;
 #endif
 	int useTCP;
